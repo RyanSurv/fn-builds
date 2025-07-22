@@ -23,7 +23,7 @@ function Play() {
     const [ignoredKeys, setIgnoredKeys] = useState<string[]>([]);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [completionTime, setCompletionTime] = useState<number | null>(null);
-    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number } }>({});
+    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number, bestTime: number } }>({});
 
     // Function to load keybinds from localStorage
     const loadKeybinds = () => {
@@ -68,7 +68,18 @@ function Play() {
         if (savedStats) {
             try {
                 const parsedStats = JSON.parse(savedStats);
-                setStats(parsedStats);
+                // Migrate old stats to include bestTime if missing
+                const migratedStats: typeof stats = {};
+                Object.entries(parsedStats).forEach(([sequenceName, sequenceStats]: [string, any]) => {
+                    migratedStats[sequenceName] = {
+                        totalAttempts: sequenceStats.totalAttempts || 0,
+                        totalTime: sequenceStats.totalTime || 0,
+                        totalAccuracy: sequenceStats.totalAccuracy || 0,
+                        perfectAttempts: sequenceStats.perfectAttempts || 0,
+                        bestTime: sequenceStats.bestTime !== undefined ? sequenceStats.bestTime : Infinity
+                    };
+                });
+                setStats(migratedStats);
             } catch (error) {
                 console.error('Failed to load stats from localStorage:', error);
             }
@@ -196,15 +207,18 @@ function Play() {
                 const sequenceName = selectedSequence.name;
 
                 setStats(prevStats => {
-                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0 };
+                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0, bestTime: Infinity };
                     const isPerfect = accuracy === 100;
+                    // Only update best time if the sequence was completed perfectly
+                    const newBestTime = isPerfect ? Math.min(currentStats.bestTime, time) : currentStats.bestTime;
                     const newStats = {
                         ...prevStats,
                         [sequenceName]: {
                             totalAttempts: currentStats.totalAttempts + 1,
                             totalTime: currentStats.totalTime + time,
                             totalAccuracy: currentStats.totalAccuracy + accuracy,
-                            perfectAttempts: currentStats.perfectAttempts + (isPerfect ? 1 : 0)
+                            perfectAttempts: currentStats.perfectAttempts + (isPerfect ? 1 : 0),
+                            bestTime: newBestTime
                         }
                     };
 
@@ -240,11 +254,16 @@ function Play() {
         const avgTime = (sequenceStats.totalTime / sequenceStats.totalAttempts) / 1000; // Convert to seconds
         const avgAccuracy = sequenceStats.totalAccuracy / sequenceStats.totalAttempts;
 
+        // Handle bestTime - if it doesn't exist or is Infinity, don't show it yet
+        const hasBestTime = sequenceStats.bestTime !== undefined && sequenceStats.bestTime !== Infinity;
+        const bestTime = hasBestTime ? sequenceStats.bestTime / 1000 : null; // Convert to seconds
+
         return {
             attempts: sequenceStats.totalAttempts,
             avgTime: avgTime.toFixed(2),
             avgAccuracy: Math.round(avgAccuracy),
-            perfectAttempts: sequenceStats.perfectAttempts || 0
+            perfectAttempts: sequenceStats.perfectAttempts || 0,
+            bestTime: bestTime ? bestTime.toFixed(2) : null
         };
     };
 
@@ -317,8 +336,8 @@ function Play() {
                                             <Separator className="mt-8" />
                                             <div className="flex justify-between items-center">
                                                 <div>
-                                                    <p className="text-sm text-muted-foreground mb-2">Average Stats ({getAverageStats()!.attempts} attempts):</p>
-                                                    <div className="flex gap-4">
+                                                    <p className="text-sm text-muted-foreground mb-2">Sequence Stats ({getAverageStats()!.attempts} attempts):</p>
+                                                    <div className="flex gap-4 flex-wrap">
                                                         <p className="text-sm text-muted-foreground">
                                                             Avg Time: <span className="text-foreground font-medium">{getAverageStats()!.avgTime}s</span>
                                                         </p>
@@ -328,6 +347,11 @@ function Play() {
                                                         <p className="text-sm text-muted-foreground">
                                                             Perfect: <span className="text-foreground font-medium">{getAverageStats()!.perfectAttempts}</span>
                                                         </p>
+                                                        {getAverageStats()!.bestTime && (
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Best Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <Button variant="outline" size="sm" onClick={clearStats}>
