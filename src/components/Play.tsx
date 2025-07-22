@@ -24,6 +24,8 @@ function Play() {
     const [ignoredKeys, setIgnoredKeys] = useState<string[]>([]);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [completionTime, setCompletionTime] = useState<number | null>(null);
+    const [showPerfectMessage, setShowPerfectMessage] = useState(false);
+    const [showMistakeMessage, setShowMistakeMessage] = useState(false);
     const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number, bestTime: number, totalPerfectTime: number } }>({});
 
     // Function to load keybinds from localStorage
@@ -230,6 +232,17 @@ function Play() {
                 const accuracy = calculateAccuracy();
                 const sequenceName = selectedSequence.name;
 
+                // Show appropriate message based on accuracy
+                if (accuracy === 100) {
+                    setShowPerfectMessage(true);
+                    setShowMistakeMessage(false);
+                    setTimeout(() => setShowPerfectMessage(false), 2000); // Hide after 2 seconds
+                } else {
+                    setShowMistakeMessage(true);
+                    setShowPerfectMessage(false);
+                    setTimeout(() => setShowMistakeMessage(false), 2000); // Hide after 2 seconds
+                }
+
                 setStats(prevStats => {
                     const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0, bestTime: Infinity, totalPerfectTime: 0 };
                     const isPerfect = accuracy === 100;
@@ -320,7 +333,25 @@ function Play() {
     };
 
     return (
-        <div className="p-4 border border-muted rounded-sm flex-grow">
+        <div className="p-4 border border-muted rounded-sm flex-grow relative">
+            {/* Perfect Message Notification */}
+            {showPerfectMessage && (
+                <div className="absolute top-4 right-4 z-50">
+                    <div className="bg-green-500 text-white text-lg font-bold px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                        🎉 PERFECT! 🎉
+                    </div>
+                </div>
+            )}
+
+            {/* Mistake Message Notification */}
+            {showMistakeMessage && (
+                <div className="absolute top-4 right-4 z-50">
+                    <div className="bg-red-500 text-white text-lg font-bold px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                        ❌ MISTAKE! ❌
+                    </div>
+                </div>
+            )}
+
             <ActionBar
                 sequences={sequences}
                 setSelectedSequence={setSelectedSequence}
