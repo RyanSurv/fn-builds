@@ -7,6 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
 import { Button } from "./ui/button";
 
 type Sequence = {
@@ -22,7 +23,7 @@ function Play() {
     const [ignoredKeys, setIgnoredKeys] = useState<string[]>([]);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [completionTime, setCompletionTime] = useState<number | null>(null);
-    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number } }>({});
+    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number } }>({});
 
     // Function to load keybinds from localStorage
     const loadKeybinds = () => {
@@ -195,13 +196,15 @@ function Play() {
                 const sequenceName = selectedSequence.name;
 
                 setStats(prevStats => {
-                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0 };
+                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0 };
+                    const isPerfect = accuracy === 100;
                     const newStats = {
                         ...prevStats,
                         [sequenceName]: {
                             totalAttempts: currentStats.totalAttempts + 1,
                             totalTime: currentStats.totalTime + time,
-                            totalAccuracy: currentStats.totalAccuracy + accuracy
+                            totalAccuracy: currentStats.totalAccuracy + accuracy,
+                            perfectAttempts: currentStats.perfectAttempts + (isPerfect ? 1 : 0)
                         }
                     };
 
@@ -240,7 +243,8 @@ function Play() {
         return {
             attempts: sequenceStats.totalAttempts,
             avgTime: avgTime.toFixed(2),
-            avgAccuracy: Math.round(avgAccuracy)
+            avgAccuracy: Math.round(avgAccuracy),
+            perfectAttempts: sequenceStats.perfectAttempts || 0
         };
     };
 
@@ -309,22 +313,29 @@ function Play() {
                                         Accuracy: <span className="text-foreground font-semibold">{calculateAccuracy()}%</span>
                                     </p>
                                     {getAverageStats() && (
-                                        <div className="mt-8 border-t border-border">
-                                            <div className="flex justify-between items-center mt-4 mb-1">
-                                                <p className="text-sm text-muted-foreground">Average Stats ({getAverageStats()!.attempts} attempts):</p>
+                                        <>
+                                            <Separator className="mt-8" />
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground mb-2">Average Stats ({getAverageStats()!.attempts} attempts):</p>
+                                                    <div className="flex gap-4">
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Avg Time: <span className="text-foreground font-medium">{getAverageStats()!.avgTime}s</span>
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Avg Accuracy: <span className="text-foreground font-medium">{getAverageStats()!.avgAccuracy}%</span>
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Perfect: <span className="text-foreground font-medium">{getAverageStats()!.perfectAttempts}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
                                                 <Button variant="outline" size="sm" onClick={clearStats}>
                                                     Clear Stats
                                                 </Button>
                                             </div>
-                                            <div className="flex gap-4">
-                                                <p className="text-sm text-muted-foreground">
-                                                    Avg Time: <span className="text-foreground font-medium">{getAverageStats()!.avgTime}s</span>
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Avg Accuracy: <span className="text-foreground font-medium">{getAverageStats()!.avgAccuracy}%</span>
-                                                </p>
-                                            </div>
-                                        </div>
+
+                                        </>
                                     )}
                                 </div>
                             )}
