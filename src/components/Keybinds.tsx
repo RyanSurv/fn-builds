@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { Pencil, Info } from "lucide-react"
-import { toast } from "sonner"
+import { Pencil, Info, CheckCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +21,7 @@ function Keybinds() {
     const [ignoredKeys, setIgnoredKeys] = useState("");
 
     const [isEditing, setIsEditing] = useState(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
     // Load keybinds from localStorage on component mount
     useEffect(() => {
@@ -88,7 +88,9 @@ function Keybinds() {
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('keybindsUpdated'));
 
-        toast("Keybinds have been saved.")
+        // Show success alert
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 5000);
     }
 
     function editKeybind(inputRef: React.RefObject<HTMLInputElement | null>, setSetter: (value: string) => void) {
@@ -143,6 +145,16 @@ function Keybinds() {
                 </Alert>
             }
 
+            {showSuccessAlert &&
+                <Alert className="mb-4 border-green-200 bg-green-200">
+                    <CheckCircle />
+                    <AlertTitle className="text-green-800">Success!</AlertTitle>
+                    <AlertDescription className="text-green-700">
+                        Keybinds have been saved successfully.
+                    </AlertDescription>
+                </Alert>
+            }
+
             <div className="flex flex-wrap justify-center items-end space-x-4">
                 <div className="space-y-2">
                     <Label>Wall</Label>
@@ -184,7 +196,7 @@ function Keybinds() {
                     <Input
                         id="ignored-keys"
                         className="w-[200px]"
-                        placeholder="e.g., Escape, Tab, F1"
+                        placeholder="e.g., W,A,Escape,Tab.."
                         value={ignoredKeys}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIgnoredKeys(e.target.value)}
                     />

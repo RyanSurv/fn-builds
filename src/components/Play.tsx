@@ -349,7 +349,7 @@ function Play() {
                                                         </p>
                                                         {getAverageStats()!.bestTime && (
                                                             <p className="text-sm text-muted-foreground">
-                                                                Best Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
+                                                                Best Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
                                                             </p>
                                                         )}
                                                     </div>
