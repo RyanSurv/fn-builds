@@ -12,12 +12,14 @@ function Keybinds() {
     const ramp = useRef<HTMLInputElement>(null);
     const cone = useRef<HTMLInputElement>(null);
     const edit = useRef<HTMLInputElement>(null);
+    const reset = useRef<HTMLInputElement>(null);
 
     const [wallBind, setWallBind] = useState("");
     const [floorBind, setFloorBind] = useState("");
     const [rampBind, setRampBind] = useState("");
     const [coneBind, setConeBind] = useState("");
     const [editBind, setEditBind] = useState("");
+    const [resetBind, setResetBind] = useState("");
     const [ignoredKeys, setIgnoredKeys] = useState("");
 
     const [isEditing, setIsEditing] = useState(false);
@@ -36,6 +38,7 @@ function Keybinds() {
                 setRampBind(keybinds.ramp || "");
                 setConeBind(keybinds.cone || "");
                 setEditBind(keybinds.edit || "");
+                setResetBind(keybinds.reset || "");
                 setIgnoredKeys(keybinds.ignoredKeys || "");
 
                 // Update input values
@@ -44,6 +47,7 @@ function Keybinds() {
                 if (ramp.current) ramp.current.value = keybinds.ramp || "";
                 if (cone.current) cone.current.value = keybinds.cone || "";
                 if (edit.current) edit.current.value = keybinds.edit || "";
+                if (reset.current) reset.current.value = keybinds.reset || "";
             } catch (error) {
                 console.error('Failed to load keybinds from localStorage:', error);
             }
@@ -71,6 +75,10 @@ function Keybinds() {
             edit.current.value = "";
             setEditBind("");
         }
+        if (reset.current) {
+            reset.current.value = "";
+            setResetBind("");
+        }
         setIgnoredKeys("");
     }
 
@@ -81,6 +89,7 @@ function Keybinds() {
             ramp: rampBind,
             cone: coneBind,
             edit: editBind,
+            reset: resetBind,
             ignoredKeys: ignoredKeys
         };
         localStorage.setItem('keybinds', JSON.stringify(keybinds));
@@ -192,6 +201,13 @@ function Keybinds() {
                     </div>
                 </div>
                 <div className="space-y-2">
+                    <Label>Reset Game</Label>
+                    <div className="flex space-x-2">
+                        <Input disabled maxLength={1} className="w-[100px]" ref={reset} />
+                        <Button onClick={() => editKeybind(reset, setResetBind)} variant={"ghost"}><Pencil /></Button>
+                    </div>
+                </div>
+                <div className="space-y-2">
                     <Label htmlFor="ignored-keys">Ignored Keys</Label>
                     <Input
                         id="ignored-keys"
@@ -204,7 +220,7 @@ function Keybinds() {
             </div>
 
             <p className="text-sm text-muted-foreground mt-2 text-center">
-                Ignored keys will be ignored when playing sequences. Separate values with commas.
+                Ignored keys will be ignored when playing sequences. Separate values with commas. "Reset Game" resets the inputs for the sequence, this is not your FN "Reset" bind.
             </p>
 
             <div className="flex justify-center space-x-2 mt-6">

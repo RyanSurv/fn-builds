@@ -19,11 +19,12 @@ function Play() {
     const [selectedSequence, setSelectedSequence] = useState<Sequence | null>(null);
     const [inputs, setInputs] = useState<String[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isLooping, setIsLooping] = useState(false);
     const [keybinds, setKeybinds] = useState<{ [key: string]: string }>({});
     const [ignoredKeys, setIgnoredKeys] = useState<string[]>([]);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [completionTime, setCompletionTime] = useState<number | null>(null);
-    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number, bestTime: number } }>({});
+    const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number, bestTime: number, totalPerfectTime: number } }>({});
 
     // Function to load keybinds from localStorage
     const loadKeybinds = () => {
@@ -76,7 +77,8 @@ function Play() {
                         totalTime: sequenceStats.totalTime || 0,
                         totalAccuracy: sequenceStats.totalAccuracy || 0,
                         perfectAttempts: sequenceStats.perfectAttempts || 0,
-                        bestTime: sequenceStats.bestTime !== undefined ? sequenceStats.bestTime : Infinity
+                        bestTime: sequenceStats.bestTime !== undefined ? sequenceStats.bestTime : Infinity,
+                        totalPerfectTime: sequenceStats.totalPerfectTime || 0
                     };
                 });
                 setStats(migratedStats);
@@ -122,6 +124,15 @@ function Play() {
         return reverseMapping[input] || input;
     };
 
+    // Reset current sequence attempt
+    const resetSequence = () => {
+        if (!isPlaying) return;
+
+        setInputs([]);
+        setStartTime(null);
+        // Keep completionTime visible if it exists (for continuous feedback)
+    };
+
     // Set up input listeners when playing
     useEffect(() => {
         if (!isPlaying || !selectedSequence) return;
@@ -136,12 +147,22 @@ function Play() {
                 return; // Don't prevent default, just ignore this key
             }
 
+            // Check if this is the reset keybind
+            if (keybinds.reset && (key === keybinds.reset || event.key === keybinds.reset)) {
+                event.preventDefault();
+                resetSequence();
+                return;
+            }
+
             event.preventDefault();
 
             // Start timing on first input
             if (inputs.length === 0) {
                 setStartTime(Date.now());
-                setCompletionTime(null);
+                // Only clear completion time if not in loop mode or if no completion time exists
+                if (!isLooping || !completionTime) {
+                    setCompletionTime(null);
+                }
             }
 
             setInputs(prev => [...prev, key]);
@@ -168,7 +189,10 @@ function Play() {
             // Start timing on first input
             if (inputs.length === 0) {
                 setStartTime(Date.now());
-                setCompletionTime(null);
+                // Only clear completion time if not in loop mode or if no completion time exists
+                if (!isLooping || !completionTime) {
+                    setCompletionTime(null);
+                }
             }
 
             setInputs(prev => [...prev, mouseButton]);
@@ -183,7 +207,7 @@ function Play() {
             document.removeEventListener('keydown', handleKeyPress);
             document.removeEventListener('mousedown', handleMousePress);
         };
-    }, [isPlaying, selectedSequence, inputs.length]);
+    }, [isPlaying, selectedSequence, inputs.length, ignoredKeys, keybinds, isLooping, completionTime, resetSequence]);
 
     // Reset inputs when starting to play or changing sequence
     useEffect(() => {
@@ -207,7 +231,7 @@ function Play() {
                 const sequenceName = selectedSequence.name;
 
                 setStats(prevStats => {
-                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0, bestTime: Infinity };
+                    const currentStats = prevStats[sequenceName] || { totalAttempts: 0, totalTime: 0, totalAccuracy: 0, perfectAttempts: 0, bestTime: Infinity, totalPerfectTime: 0 };
                     const isPerfect = accuracy === 100;
                     // Only update best time if the sequence was completed perfectly
                     const newBestTime = isPerfect ? Math.min(currentStats.bestTime, time) : currentStats.bestTime;
@@ -218,7 +242,8 @@ function Play() {
                             totalTime: currentStats.totalTime + time,
                             totalAccuracy: currentStats.totalAccuracy + accuracy,
                             perfectAttempts: currentStats.perfectAttempts + (isPerfect ? 1 : 0),
-                            bestTime: newBestTime
+                            bestTime: newBestTime,
+                            totalPerfectTime: currentStats.totalPerfectTime + (isPerfect ? time : 0)
                         }
                     };
 
@@ -227,9 +252,18 @@ function Play() {
                     return newStats;
                 });
             }
-            setIsPlaying(false);
+
+            // If in loop mode, reset and continue playing
+            if (isLooping) {
+                // Reset instantly for continuous practice
+                setInputs([]);
+                setStartTime(null);
+                // Keep completionTime visible for continuous feedback
+            } else {
+                setIsPlaying(false);
+            }
         }
-    }, [inputs.length, selectedSequence, startTime]);
+    }, [inputs.length, selectedSequence, startTime, isLooping]);
 
     // Calculate accuracy percentage
     const calculateAccuracy = (): number => {
@@ -258,12 +292,18 @@ function Play() {
         const hasBestTime = sequenceStats.bestTime !== undefined && sequenceStats.bestTime !== Infinity;
         const bestTime = hasBestTime ? sequenceStats.bestTime / 1000 : null; // Convert to seconds
 
+        // Calculate average perfect time
+        const avgPerfectTime = (sequenceStats.perfectAttempts > 0 && sequenceStats.totalPerfectTime > 0)
+            ? (sequenceStats.totalPerfectTime / sequenceStats.perfectAttempts) / 1000
+            : null; // Convert to seconds
+
         return {
             attempts: sequenceStats.totalAttempts,
             avgTime: avgTime.toFixed(2),
             avgAccuracy: Math.round(avgAccuracy),
             perfectAttempts: sequenceStats.perfectAttempts || 0,
-            bestTime: bestTime ? bestTime.toFixed(2) : null
+            bestTime: bestTime ? bestTime.toFixed(2) : null,
+            avgPerfectTime: avgPerfectTime ? avgPerfectTime.toFixed(2) : null
         };
     };
 
@@ -281,7 +321,18 @@ function Play() {
 
     return (
         <div className="p-4 border border-muted rounded-sm flex-grow">
-            <ActionBar sequences={sequences} setSelectedSequence={setSelectedSequence} isPlaying={isPlaying} setIsPlaying={setIsPlaying} selectedSequence={selectedSequence} setInputs={setInputs} />
+            <ActionBar
+                sequences={sequences}
+                setSelectedSequence={setSelectedSequence}
+                isPlaying={isPlaying}
+                setIsPlaying={setIsPlaying}
+                isLooping={isLooping}
+                setIsLooping={setIsLooping}
+                selectedSequence={selectedSequence}
+                setInputs={setInputs}
+                resetSequence={resetSequence}
+                keybinds={keybinds}
+            />
 
             {selectedSequence && (
                 <div className="">
@@ -347,6 +398,11 @@ function Play() {
                                                         <p className="text-sm text-muted-foreground">
                                                             Perfect: <span className="text-foreground font-medium">{getAverageStats()!.perfectAttempts}</span>
                                                         </p>
+                                                        {getAverageStats()!.avgPerfectTime && (
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Avg Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.avgPerfectTime}s</span>
+                                                            </p>
+                                                        )}
                                                         {getAverageStats()!.bestTime && (
                                                             <p className="text-sm text-muted-foreground">
                                                                 Best Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
@@ -371,11 +427,49 @@ function Play() {
     )
 }
 
-function ActionBar({ sequences, setSelectedSequence, isPlaying, setIsPlaying, selectedSequence, setInputs }: { sequences: Sequence[], setSelectedSequence: (setSelectedSequence: Sequence) => void, isPlaying: boolean, setIsPlaying: (isPlaying: boolean) => void, selectedSequence: Sequence | null, setInputs: (inputs: string[]) => void }) {
+function ActionBar({
+    sequences,
+    setSelectedSequence,
+    isPlaying,
+    setIsPlaying,
+    isLooping,
+    setIsLooping,
+    selectedSequence,
+    setInputs,
+    resetSequence,
+    keybinds
+}: {
+    sequences: Sequence[],
+    setSelectedSequence: (setSelectedSequence: Sequence) => void,
+    isPlaying: boolean,
+    setIsPlaying: (isPlaying: boolean) => void,
+    isLooping: boolean,
+    setIsLooping: (isLooping: boolean) => void,
+    selectedSequence: Sequence | null,
+    setInputs: (inputs: string[]) => void,
+    resetSequence: () => void,
+    keybinds: { [key: string]: string }
+}) {
     function sequenceChange(value: string) {
         setSelectedSequence(sequences.find(sequence => sequence.name === value)!);
         setIsPlaying(false);
+        setIsLooping(false);
         setInputs([]);
+    }
+
+    function startPlaying() {
+        setIsPlaying(true);
+        setIsLooping(false);
+    }
+
+    function startLooping() {
+        setIsPlaying(true);
+        setIsLooping(true);
+    }
+
+    function stopPlaying() {
+        setIsPlaying(false);
+        setIsLooping(false);
     }
 
     return (
@@ -398,8 +492,14 @@ function ActionBar({ sequences, setSelectedSequence, isPlaying, setIsPlaying, se
             </Select>
 
             <div className="flex space-x-2">
-                <Button disabled={isPlaying || !selectedSequence} onClick={() => setIsPlaying(true)}>Play</Button>
-                <Button variant={"destructive"} disabled={!isPlaying} onClick={() => setIsPlaying(false)}>Stop</Button>
+                <Button disabled={isPlaying || !selectedSequence} onClick={startPlaying}>Play</Button>
+                <Button disabled={isPlaying || !selectedSequence} onClick={startLooping} variant="outline">
+                    {isLooping ? "Loop Active" : "Play Loop"}
+                </Button>
+                <Button disabled={!isPlaying} onClick={resetSequence} variant="secondary">
+                    Reset{keybinds.reset ? ` (${keybinds.reset})` : ''}
+                </Button>
+                <Button variant={"destructive"} disabled={!isPlaying} onClick={stopPlaying}>Stop</Button>
             </div>
         </div>
     )

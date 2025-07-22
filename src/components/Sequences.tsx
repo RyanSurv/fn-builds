@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import SequenceForm from "@/components/SequenceForm"
 
 function App() {
@@ -76,12 +77,14 @@ function App() {
 
     return (
         <div className="p-4 border border-light rounded-sm w-[300px]">
-            <p className="font-bold">Sequences</p>
+            <p className="font-semibold text-sm text-center">Sequences</p>
+
+            <Separator className="mt-4" />
 
             {sequences.length === 0 ? (
                 <div className="px-4 py-2 rounded-sm text-muted-foreground my-4 italic">You have no recorded sequences..</div>
             ) : (
-                <div className="my-4">
+                <div className="my-2">
                     {sequences.map((seq, index) => (
                         <div key={index} className="p-3 rounded-sm flex justify-between items-center gap-8 hover:bg-muted cursor-pointer group">
                             <p
