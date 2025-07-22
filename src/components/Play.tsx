@@ -258,7 +258,7 @@ function Play() {
 
     return (
         <div className="p-4 border border-muted rounded-sm flex-grow">
-            <ActionBar sequences={sequences} setSelectedSequence={setSelectedSequence} isPlaying={isPlaying} setIsPlaying={setIsPlaying} selectedSequence={selectedSequence} />
+            <ActionBar sequences={sequences} setSelectedSequence={setSelectedSequence} isPlaying={isPlaying} setIsPlaying={setIsPlaying} selectedSequence={selectedSequence} setInputs={setInputs} />
 
             {selectedSequence && (
                 <div className="">
@@ -336,10 +336,16 @@ function Play() {
     )
 }
 
-function ActionBar({ sequences, setSelectedSequence, isPlaying, setIsPlaying, selectedSequence }: { sequences: Sequence[], setSelectedSequence: (setSelectedSequence: Sequence) => void, isPlaying: boolean, setIsPlaying: (isPlaying: boolean) => void, selectedSequence: Sequence | null }) {
+function ActionBar({ sequences, setSelectedSequence, isPlaying, setIsPlaying, selectedSequence, setInputs }: { sequences: Sequence[], setSelectedSequence: (setSelectedSequence: Sequence) => void, isPlaying: boolean, setIsPlaying: (isPlaying: boolean) => void, selectedSequence: Sequence | null, setInputs: (inputs: string[]) => void }) {
+    function sequenceChange(value: string) {
+        setSelectedSequence(sequences.find(sequence => sequence.name === value)!);
+        setIsPlaying(false);
+        setInputs([]);
+    }
+
     return (
         <div className="flex space-x-4">
-            <Select onValueChange={(value) => setSelectedSequence(sequences.find(sequence => sequence.name === value)!)}>
+            <Select onValueChange={(value) => sequenceChange(value)}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select Sequence" />
                 </SelectTrigger>
