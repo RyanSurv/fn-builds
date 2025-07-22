@@ -26,6 +26,7 @@ function Play() {
     const [completionTime, setCompletionTime] = useState<number | null>(null);
     const [showPerfectMessage, setShowPerfectMessage] = useState(false);
     const [showMistakeMessage, setShowMistakeMessage] = useState(false);
+    const [showAlmostMessage, setShowAlmostMessage] = useState(false);
     const [stats, setStats] = useState<{ [sequenceName: string]: { totalAttempts: number, totalTime: number, totalAccuracy: number, perfectAttempts: number, bestTime: number, totalPerfectTime: number } }>({});
 
     // Function to load keybinds from localStorage
@@ -108,6 +109,51 @@ function Play() {
             window.removeEventListener('sequencesUpdated', handleSequencesUpdate);
         };
     }, []);
+
+    // Global keyboard listener for Play, Stop, and Play Loop keybinds (works regardless of playing state)
+    useEffect(() => {
+        const handleGlobalKeyPress = (event: KeyboardEvent) => {
+            const key = event.key.length === 1 ? event.key.toUpperCase() : event.code;
+
+            // Check for Play keybind
+            if (keybinds.play && (key === keybinds.play || event.key === keybinds.play)) {
+                if (!isPlaying && selectedSequence) {
+                    event.preventDefault();
+                    setIsPlaying(true);
+                    setIsLooping(false);
+                }
+                return;
+            }
+
+            // Check for Stop keybind
+            if (keybinds.stop && (key === keybinds.stop || event.key === keybinds.stop)) {
+                if (isPlaying) {
+                    event.preventDefault();
+                    setIsPlaying(false);
+                    setIsLooping(false);
+                }
+                return;
+            }
+
+            // Check for Play Loop keybind
+            if (keybinds.playLoop && (key === keybinds.playLoop || event.key === keybinds.playLoop)) {
+                if (!isPlaying && selectedSequence) {
+                    event.preventDefault();
+                    setIsPlaying(true);
+                    setIsLooping(true);
+                }
+                return;
+            }
+        };
+
+        // Add global event listener
+        document.addEventListener('keydown', handleGlobalKeyPress);
+
+        // Cleanup function
+        return () => {
+            document.removeEventListener('keydown', handleGlobalKeyPress);
+        };
+    }, [keybinds, isPlaying, selectedSequence]);
 
     // Function to map input to keybind name
     const mapInputToKeybind = (input: string): string => {
@@ -236,10 +282,17 @@ function Play() {
                 if (accuracy === 100) {
                     setShowPerfectMessage(true);
                     setShowMistakeMessage(false);
+                    setShowAlmostMessage(false);
                     setTimeout(() => setShowPerfectMessage(false), 2000); // Hide after 2 seconds
+                } else if (accuracy >= 75) {
+                    setShowAlmostMessage(true);
+                    setShowPerfectMessage(false);
+                    setShowMistakeMessage(false);
+                    setTimeout(() => setShowAlmostMessage(false), 2000); // Hide after 2 seconds
                 } else {
                     setShowMistakeMessage(true);
                     setShowPerfectMessage(false);
+                    setShowAlmostMessage(false);
                     setTimeout(() => setShowMistakeMessage(false), 2000); // Hide after 2 seconds
                 }
 
@@ -348,6 +401,15 @@ function Play() {
                 <div className="absolute top-4 right-4 z-50">
                     <div className="bg-red-500 text-white text-lg font-bold px-4 py-2 rounded-lg shadow-lg animate-pulse">
                         ❌ MISTAKE! ❌
+                    </div>
+                </div>
+            )}
+
+            {/* Almost Perfect Message Notification */}
+            {showAlmostMessage && (
+                <div className="absolute top-4 right-4 z-50">
+                    <div className="bg-yellow-500 text-white text-lg font-bold px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                        ⚡ ALMOST! ⚡
                     </div>
                 </div>
             )}
@@ -523,14 +585,18 @@ function ActionBar({
             </Select>
 
             <div className="flex space-x-2">
-                <Button disabled={isPlaying || !selectedSequence} onClick={startPlaying}>Play</Button>
+                <Button disabled={isPlaying || !selectedSequence} onClick={startPlaying}>
+                    Play{keybinds.play ? ` (${keybinds.play})` : ''}
+                </Button>
                 <Button disabled={isPlaying || !selectedSequence} onClick={startLooping} variant="outline">
-                    {isLooping ? "Loop Active" : "Play Loop"}
+                    {isLooping ? "Loop Active" : `Play Loop${keybinds.playLoop ? ` (${keybinds.playLoop})` : ''}`}
                 </Button>
                 <Button disabled={!isPlaying} onClick={resetSequence} variant="secondary">
                     Reset{keybinds.reset ? ` (${keybinds.reset})` : ''}
                 </Button>
-                <Button variant={"destructive"} disabled={!isPlaying} onClick={stopPlaying}>Stop</Button>
+                <Button variant={"destructive"} disabled={!isPlaying} onClick={stopPlaying}>
+                    Stop{keybinds.stop ? ` (${keybinds.stop})` : ''}
+                </Button>
             </div>
         </div>
     )

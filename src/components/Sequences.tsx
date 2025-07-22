@@ -87,7 +87,7 @@ function App() {
     function importSequence() {
         try {
             const parsedSequence = JSON.parse(importJson);
-            
+
             // Validate the parsed data
             if (!parsedSequence.name || !parsedSequence.steps || !Array.isArray(parsedSequence.steps)) {
                 setImportError("Invalid sequence format. Expected JSON with 'name' and 'steps' properties.");
@@ -95,7 +95,7 @@ function App() {
             }
 
             // Check for duplicate names
-            const duplicateExists = sequences.some(seq => 
+            const duplicateExists = sequences.some(seq =>
                 seq.name.toLowerCase() === parsedSequence.name.toLowerCase()
             );
 
@@ -168,7 +168,7 @@ function App() {
                         <DialogDescription>
                             {isEditing
                                 ? "Edit your sequence by adding or removing steps."
-                                : "Record a sequence of builds/mouse clicks and give the sequence a name to repeat numerous times for building muscle memory and check"
+                                : "Record a sequence of builds/mouse clicks and give the sequence a name to repeat numerous times for building muscle memory."
                             }
                         </DialogDescription>
                     </DialogHeader>
@@ -184,13 +184,13 @@ function App() {
 
             <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button 
+                    <Button
                         onClick={() => {
                             setImportJson("");
                             setImportError("");
                             setIsImportDialogOpen(true);
-                        }} 
-                        className="w-full mt-2" 
+                        }}
+                        className="w-full mt-2"
                         variant="outline"
                     >
                         Import Sequence
@@ -219,16 +219,16 @@ function App() {
                                 <p className="text-red-500 text-sm mt-1">{importError}</p>
                             )}
                         </div>
-                        
+
                         <div className="flex space-x-2">
-                            <Button 
+                            <Button
                                 onClick={importSequence}
                                 disabled={!importJson.trim()}
                                 className="flex-1"
                             >
                                 Import
                             </Button>
-                            <Button 
+                            <Button
                                 onClick={() => {
                                     setImportJson("");
                                     setImportError("");

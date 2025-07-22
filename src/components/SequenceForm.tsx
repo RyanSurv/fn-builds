@@ -48,7 +48,7 @@ function SequenceForm(props: Props) {
 
     function handleCreateSequence() {
         const name = nameRef.current?.value?.trim() || "Unnamed";
-        
+
         if (validateSequenceName(name)) {
             props.createSequence({ name, steps: sequence });
         }
@@ -56,14 +56,14 @@ function SequenceForm(props: Props) {
 
     function exportSequence() {
         if (!props.editingSequence) return;
-        
+
         const sequenceData = {
             name: props.editingSequence.name,
             steps: props.editingSequence.steps
         };
-        
+
         const jsonString = JSON.stringify(sequenceData, null, 2);
-        
+
         // Copy to clipboard
         navigator.clipboard.writeText(jsonString).then(() => {
             alert(`Sequence "${props.editingSequence!.name}" copied to clipboard!`);
