@@ -303,7 +303,7 @@ function Play() {
                         })}
                     </div>
 
-                    {(isPlaying || inputs.length) &&
+                    {(isPlaying || inputs.length > 0) &&
                         <div>
                             <div className="flex flex-wrap gap-1 mt-4">
                                 <p className="text-muted-foreground">Inputted Steps:</p>

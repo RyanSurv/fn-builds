@@ -89,7 +89,7 @@ function SequenceForm(props: Props) {
                 <ol className="mt-4 space-y-2">
                     {sequence.map((step, idx) => {
                         return (
-                            <li 
+                            <li
                                 key={idx}
                                 className="flex justify-between items-center space-x-2 p-2 border border-border rounded-sm bg-background hover:bg-muted cursor-move"
                                 draggable
