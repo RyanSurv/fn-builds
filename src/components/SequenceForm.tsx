@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 type Props = {
     createSequence: (sequence: Sequence) => void,
     editingSequence?: Sequence | null,
-    isEditing?: boolean
+    isEditing?: boolean,
+    existingSequences: Sequence[]
 }
 
 type Sequence = {
@@ -18,6 +19,65 @@ type Sequence = {
 function SequenceForm(props: Props) {
     const nameRef = useRef<HTMLInputElement>(null);
     const [sequence, setSequence] = useState<string[]>([]);
+    const [nameError, setNameError] = useState<string>("");
+
+    // Validate sequence name
+    function validateSequenceName(name: string): boolean {
+        if (!name || name.trim() === "") {
+            setNameError("Sequence name cannot be empty");
+            return false;
+        }
+
+        // Check for duplicate names (case-insensitive)
+        const duplicateExists = props.existingSequences.some(existingSeq => {
+            // When editing, allow the same name if it's the current sequence being edited
+            if (props.isEditing && props.editingSequence && existingSeq.name === props.editingSequence.name) {
+                return false;
+            }
+            return existingSeq.name.toLowerCase() === name.toLowerCase();
+        });
+
+        if (duplicateExists) {
+            setNameError(`A sequence with the name "${name}" already exists`);
+            return false;
+        }
+
+        setNameError("");
+        return true;
+    }
+
+    function handleCreateSequence() {
+        const name = nameRef.current?.value?.trim() || "Unnamed";
+        
+        if (validateSequenceName(name)) {
+            props.createSequence({ name, steps: sequence });
+        }
+    }
+
+    function exportSequence() {
+        if (!props.editingSequence) return;
+        
+        const sequenceData = {
+            name: props.editingSequence.name,
+            steps: props.editingSequence.steps
+        };
+        
+        const jsonString = JSON.stringify(sequenceData, null, 2);
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(jsonString).then(() => {
+            alert(`Sequence "${props.editingSequence!.name}" copied to clipboard!`);
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = jsonString;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert(`Sequence "${props.editingSequence!.name}" copied to clipboard!`);
+        });
+    }
 
     // Load editing sequence data when editing
     useEffect(() => {
@@ -110,16 +170,33 @@ function SequenceForm(props: Props) {
                 </ol>
             </div>
 
-            {sequence.length > 1 && <div className="mt-8 flex space-x-2">
-                <Input
-                    placeholder="Sequence name.."
-                    ref={nameRef}
-                    key={props.isEditing ? 'editing' : 'creating'}
-                    defaultValue={props.isEditing && props.editingSequence ? props.editingSequence.name : ""}
-                />
-                <Button onClick={() => props.createSequence({ name: nameRef.current?.value || "Unnamed", steps: sequence })}>
-                    {props.isEditing ? "Update" : "Create"}
-                </Button>
+            {sequence.length > 1 && <div className="mt-8 space-y-2">
+                <div className="flex space-x-2">
+                    <Input
+                        placeholder="Sequence name.."
+                        ref={nameRef}
+                        key={props.isEditing ? 'editing' : 'creating'}
+                        defaultValue={props.isEditing && props.editingSequence ? props.editingSequence.name : ""}
+                        onChange={() => {
+                            // Clear error when user starts typing
+                            if (nameError) {
+                                setNameError("");
+                            }
+                        }}
+                        className={nameError ? "border-red-500" : ""}
+                    />
+                    <Button onClick={handleCreateSequence}>
+                        {props.isEditing ? "Update" : "Create"}
+                    </Button>
+                    {props.isEditing && (
+                        <Button onClick={exportSequence} variant="outline">
+                            Export
+                        </Button>
+                    )}
+                </div>
+                {nameError && (
+                    <p className="text-red-500 text-sm">{nameError}</p>
+                )}
             </div>}
         </div>
     )

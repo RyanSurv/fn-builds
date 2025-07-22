@@ -11,6 +11,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
 import SequenceForm from "@/components/SequenceForm"
 
 function App() {
@@ -18,6 +19,9 @@ function App() {
     const [editingSequence, setEditingSequence] = useState<{ name: string, steps: string[] } | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [importJson, setImportJson] = useState("");
+    const [importError, setImportError] = useState("");
 
     // Load sequences from localStorage on component mount
     useEffect(() => {
@@ -33,6 +37,20 @@ function App() {
     }, []);
 
     function createSequence(sequence: { name: string, steps: string[] }) {
+        // Check for duplicate names (case-insensitive)
+        const duplicateExists = sequences.some(existingSeq => {
+            // When editing, allow the same name if it's the current sequence being edited
+            if (isEditing && editingSequence && existingSeq.name === editingSequence.name) {
+                return false;
+            }
+            return existingSeq.name.toLowerCase() === sequence.name.toLowerCase();
+        });
+
+        if (duplicateExists) {
+            alert(`A sequence with the name "${sequence.name}" already exists. Please choose a different name.`);
+            return;
+        }
+
         if (isEditing && editingSequence) {
             // Update existing sequence
             const updatedSequences = sequences.map(seq =>
@@ -64,6 +82,43 @@ function App() {
         setEditingSequence(null);
         setIsEditing(false);
         setIsDialogOpen(true);
+    }
+
+    function importSequence() {
+        try {
+            const parsedSequence = JSON.parse(importJson);
+            
+            // Validate the parsed data
+            if (!parsedSequence.name || !parsedSequence.steps || !Array.isArray(parsedSequence.steps)) {
+                setImportError("Invalid sequence format. Expected JSON with 'name' and 'steps' properties.");
+                return;
+            }
+
+            // Check for duplicate names
+            const duplicateExists = sequences.some(seq => 
+                seq.name.toLowerCase() === parsedSequence.name.toLowerCase()
+            );
+
+            if (duplicateExists) {
+                setImportError(`A sequence with the name "${parsedSequence.name}" already exists.`);
+                return;
+            }
+
+            // Add the imported sequence
+            const updatedSequences = [...sequences, parsedSequence];
+            setSequences(updatedSequences);
+            localStorage.setItem('sequences', JSON.stringify(updatedSequences));
+
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('sequencesUpdated'));
+
+            // Reset and close dialog
+            setImportJson("");
+            setImportError("");
+            setIsImportDialogOpen(false);
+        } catch (error) {
+            setImportError("Invalid JSON format. Please check your input.");
+        }
     }
 
     function removeSequence(idx: number) {
@@ -122,7 +177,69 @@ function App() {
                         createSequence={createSequence}
                         editingSequence={editingSequence}
                         isEditing={isEditing}
+                        existingSequences={sequences}
                     />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button 
+                        onClick={() => {
+                            setImportJson("");
+                            setImportError("");
+                            setIsImportDialogOpen(true);
+                        }} 
+                        className="w-full mt-2" 
+                        variant="outline"
+                    >
+                        Import Sequence
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Import Sequence</DialogTitle>
+                        <DialogDescription>
+                            Paste the JSON data of a sequence to import it.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div>
+                            <Input
+                                placeholder="Paste sequence JSON here..."
+                                value={importJson}
+                                onChange={(e) => {
+                                    setImportJson(e.target.value);
+                                    if (importError) setImportError("");
+                                }}
+                                className={importError ? "border-red-500" : ""}
+                            />
+                            {importError && (
+                                <p className="text-red-500 text-sm mt-1">{importError}</p>
+                            )}
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                            <Button 
+                                onClick={importSequence}
+                                disabled={!importJson.trim()}
+                                className="flex-1"
+                            >
+                                Import
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    setImportJson("");
+                                    setImportError("");
+                                    setIsImportDialogOpen(false);
+                                }}
+                                variant="outline"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
