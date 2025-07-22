@@ -3,6 +3,7 @@ import Sequences from "@/components/Sequences"
 import Play from "@/components/Play"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
+import FAQ from "@/components/FAQ"
 
 function App() {
   return (
@@ -12,7 +13,10 @@ function App() {
         <Keybinds />
         <div className="flex flex-wrap gap-4 items-start">
           <Sequences />
-          <Play />
+          <div className="space-y-2 flex-grow">
+            <Play />
+            <FAQ />
+          </div>
         </div>
       </div>
       <Footer />

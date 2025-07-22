@@ -382,42 +382,42 @@ function Play() {
                                     <p className="text-muted-foreground">
                                         Accuracy: <span className="text-foreground font-semibold">{calculateAccuracy()}%</span>
                                     </p>
-                                    {getAverageStats() && (
-                                        <>
-                                            <Separator className="mt-8" />
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground mb-2">Sequence Stats ({getAverageStats()!.attempts} attempts):</p>
-                                                    <div className="flex gap-4 flex-wrap">
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Avg Time: <span className="text-foreground font-medium">{getAverageStats()!.avgTime}s</span>
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Avg Accuracy: <span className="text-foreground font-medium">{getAverageStats()!.avgAccuracy}%</span>
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Perfect: <span className="text-foreground font-medium">{getAverageStats()!.perfectAttempts}</span>
-                                                        </p>
-                                                        {getAverageStats()!.avgPerfectTime && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Avg Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.avgPerfectTime}s</span>
-                                                            </p>
-                                                        )}
-                                                        {getAverageStats()!.bestTime && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Best Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <Button variant="outline" size="sm" onClick={clearStats}>
-                                                    Clear Stats
-                                                </Button>
-                                            </div>
-
-                                        </>
-                                    )}
                                 </div>
+                            )}
+
+                            {getAverageStats() && (
+                                <>
+                                    <Separator className="my-8" />
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-2">Sequence Stats ({getAverageStats()!.attempts} attempts):</p>
+                                            <div className="flex gap-4 flex-wrap">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Avg Time: <span className="text-foreground font-medium">{getAverageStats()!.avgTime}s</span>
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Avg Accuracy: <span className="text-foreground font-medium">{getAverageStats()!.avgAccuracy}%</span>
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Perfect: <span className="text-foreground font-medium">{getAverageStats()!.perfectAttempts}</span>
+                                                </p>
+                                                {getAverageStats()!.avgPerfectTime && (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Avg Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.avgPerfectTime}s</span>
+                                                    </p>
+                                                )}
+                                                {getAverageStats()!.bestTime && (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Best Perfect Time: <span className="text-foreground font-medium">{getAverageStats()!.bestTime}s</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={clearStats}>
+                                            Clear Stats
+                                        </Button>
+                                    </div>
+                                </>
                             )}
                         </div>
                     }
