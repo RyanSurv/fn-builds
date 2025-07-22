@@ -69,7 +69,7 @@ function App() {
                     <DialogHeader>
                         <DialogTitle>Record Sequence</DialogTitle>
                         <DialogDescription>
-                            Record a sequence of builds/mouse clicks and give the sequence a name to repeat numerous times for building muscle memory and check
+                            Record a sequence of builds/mouse clicks and give the sequence a name to repeat numerous times for building muscle memory and check accuracy.
                         </DialogDescription>
                     </DialogHeader>
 
