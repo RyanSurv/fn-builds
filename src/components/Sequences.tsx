@@ -32,12 +32,18 @@ function App() {
         const updatedSequences = [...sequences, sequence];
         setSequences(updatedSequences);
         localStorage.setItem('sequences', JSON.stringify(updatedSequences));
+
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('sequencesUpdated'));
     }
 
     function removeSequence(idx: number) {
         const updatedSequences = sequences.filter((_, index) => index !== idx);
         setSequences(updatedSequences);
         localStorage.setItem('sequences', JSON.stringify(updatedSequences));
+
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('sequencesUpdated'));
     }
 
     return (
@@ -47,9 +53,9 @@ function App() {
             {sequences.length === 0 ? (
                 <div className="px-4 py-2 rounded-sm text-muted-foreground my-4 italic">You have no recorded sequences..</div>
             ) : (
-                <div className="my-4 space-y-2">
+                <div className="my-4">
                     {sequences.map((seq, index) => (
-                        <div key={index} className="p-3 border rounded-sm flex justify-between items-center gap-8">
+                        <div key={index} className="p-3 rounded-sm flex justify-between items-center gap-8 hover:bg-muted">
                             <p className="font-semibold">{seq.name}</p>
                             <Button onClick={() => removeSequence(index)} variant={"destructive"} size={"icon"}><Trash /></Button>
                         </div>

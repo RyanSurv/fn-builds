@@ -45,8 +45,8 @@ function Play() {
         }
     };
 
-    // Load sequences and keybinds from localStorage on component mount
-    useEffect(() => {
+    // Function to load sequences from localStorage
+    const loadSequences = () => {
         const savedSequences = localStorage.getItem('sequences');
         if (savedSequences) {
             try {
@@ -56,7 +56,11 @@ function Play() {
                 console.error('Failed to load sequences from localStorage:', error);
             }
         }
+    };
 
+    // Load sequences and keybinds from localStorage on component mount
+    useEffect(() => {
+        loadSequences();
         loadKeybinds();
 
         const savedStats = localStorage.getItem('playStats');
@@ -74,11 +78,18 @@ function Play() {
             loadKeybinds();
         };
 
-        window.addEventListener('keybindsUpdated', handleKeybindsUpdate);
+        // Listen for custom sequences update event
+        const handleSequencesUpdate = () => {
+            loadSequences();
+        };
 
-        // Cleanup listener on unmount
+        window.addEventListener('keybindsUpdated', handleKeybindsUpdate);
+        window.addEventListener('sequencesUpdated', handleSequencesUpdate);
+
+        // Cleanup listeners on unmount
         return () => {
             window.removeEventListener('keybindsUpdated', handleKeybindsUpdate);
+            window.removeEventListener('sequencesUpdated', handleSequencesUpdate);
         };
     }, []);
 
@@ -132,6 +143,12 @@ function Play() {
             // Check if this mouse button should be ignored
             if (ignoredKeys.includes(mouseButton)) {
                 return; // Don't prevent default, just ignore this button
+            }
+
+            // Check if the click is on a button element (to ignore UI interactions)
+            const target = event.target as HTMLElement;
+            if (target && (target.tagName === 'BUTTON' || target.closest('button'))) {
+                return; // Don't record clicks on buttons
             }
 
             event.preventDefault();
